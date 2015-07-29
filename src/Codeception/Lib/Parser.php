@@ -57,6 +57,8 @@ class Parser
                 \Codeception\Lib\Deprecation::add("\$scenario->$call() is deprecated in favor of annotation: // @$call",
                     $this->scenario->getFeature()
                 );
+
+
                 eval($line);
             }
 

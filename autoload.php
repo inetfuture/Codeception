@@ -27,6 +27,12 @@ if (!class_exists('RemoteWebDriver') and class_exists('Facebook\WebDriver\Remote
     interface WebDriverElement extends Facebook\WebDriver\WebDriverElement {};
 }
 
+// compat 
+if (PHP_MAJOR_VERSION < 7) {
+    interface Throwable {};
+    class ParseError extends \Exception {}
+}
+
 // function not autoloaded in PHP, thus its a good place for them
 function codecept_debug($data)
 {

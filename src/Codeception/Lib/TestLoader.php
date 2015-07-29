@@ -1,6 +1,7 @@
 <?php
 namespace Codeception\Lib;
 
+use Codeception\Exception\TestParseException;
 use Codeception\TestCase\Cept;
 use Codeception\TestCase\Cest;
 use Symfony\Component\Finder\Finder;
@@ -163,7 +164,12 @@ class TestLoader
             if (!(new \ReflectionClass($testClass))->isInstantiable()) {
                 continue;
             }
-            $unit = new $testClass;
+
+            try {
+                $unit = new $testClass;
+            } catch (\ParseError $e) {
+                throw new TestParseException('');
+            }
 
             $methods = get_class_methods($testClass);
             foreach ($methods as $method) {
