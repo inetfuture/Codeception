@@ -69,7 +69,7 @@ class Cept extends CodeceptionTestCase implements
         try {
             require $this->testFile;
         } catch (\ParseError $e) {
-            throw new TestParseException($this->getRawBody());
+            throw new TestParseException($this->testFile);
         }
     }
 
