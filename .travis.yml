@@ -40,10 +40,10 @@ install:
   # Yii2
   - composer create-project yiisoft/yii2-app-basic frameworks-yii-basic
   # Phalcon
-  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || git clone -q --depth=1 https://github.com/phalcon/cphalcon.git'
-  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || (cd cphalcon/ext; export CFLAGS="-g3 -O1 -fno-delete-null-pointer-checks -Wall"; phpize &> /dev/null && ./configure --silent --enable-phalcon &> /dev/null && make --silent -j4 > /dev/null && make --silent install && phpenv config-add ../unit-tests/ci/phalcon.ini &> /dev/null && cd ../..;)'
-  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || git clone -q --depth=1 https://github.com/Codeception/phalcon-demo.git frameworks-phalcon'
-  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || composer install -d frameworks-phalcon --no-dev  --prefer-source'
+  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || [[ "$TRAVIS_PHP_VERSION" == "7" ]] || git clone -q --depth=1 https://github.com/phalcon/cphalcon.git'
+  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || [[ "$TRAVIS_PHP_VERSION" == "7" ]] || (cd cphalcon/ext; export CFLAGS="-g3 -O1 -fno-delete-null-pointer-checks -Wall"; phpize &> /dev/null && ./configure --silent --enable-phalcon &> /dev/null && make --silent -j4 > /dev/null && make --silent install && phpenv config-add ../unit-tests/ci/phalcon.ini &> /dev/null && cd ../..;)'
+  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || [[ "$TRAVIS_PHP_VERSION" == "7" ]] || git clone -q --depth=1 https://github.com/Codeception/phalcon-demo.git frameworks-phalcon'
+  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || [[ "$TRAVIS_PHP_VERSION" == "7" ]] || composer install -d frameworks-phalcon --no-dev  --prefer-source'
   # Laravel 4
   - git clone -q  -b codeception-2.1 https://github.com/Codeception/sample-l4-app.git frameworks-laravel
   - composer install -d frameworks-laravel --no-dev  --prefer-source
@@ -112,7 +112,7 @@ script:
   - php codecept run functional -c frameworks-yii-basic/tests # Yii2 tests
   - php codecept run -c frameworks-laravel functional,api,unit # Laravel4 Tests
   - '[[ "$TRAVIS_PHP_VERSION" == "5.4" ]] || php codecept run -c frameworks-l5' # Laravel5 Tests
-  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || php codecept run functional -c frameworks-phalcon' # Phalcon Tests
+  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || [[ "$TRAVIS_PHP_VERSION" == "7" ]] || php codecept run functional -c frameworks-phalcon' # Phalcon Tests
   - php codecept run functional -c frameworks-symfony # Symfony Tests
   - php codecept run functional -c frameworks-zf1 # ZF1 Tests
   - php codecept run functional -c frameworks-zf2 # ZF2 Tests
