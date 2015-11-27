@@ -7,28 +7,48 @@ use Phalcon\Di;
 use Phalcon\DiInterface;
 use Phalcon\Di\Injectable;
 use Phalcon\Mvc\Model as PhalconModel;
+use Phalcon\Mvc\Url;
+use Phalcon\Mvc\Router\RouteInterface;
+use Phalcon\Mvc\RouterInterface;
 use Codeception\TestCase;
 use Codeception\Configuration;
-use Codeception\Lib\Connector\Phalcon1 as Phalcon1Connector;
+use Codeception\Lib\Connector\Phalcon as PhalconConnector;
 use Codeception\Lib\Framework;
 use Codeception\Lib\Interfaces\ActiveRecord;
 use Codeception\Lib\Interfaces\PartedModule;
 use Codeception\Exception\ModuleConfigException;
+use Exception;
 use Codeception\Lib\Connector\PhalconMemorySession;
 
 /**
- * This module provides integration with [Phalcon framework](http://www.phalconphp.com/) (1.x/2.x).
+ * This module provides integration with [Phalcon framework](http://www.phalconphp.com/) (1.x).
+ * Please try it and leave your feedback.
  *
  * ## Demo Project
  *
  * <https://github.com/phalcon/forum>
  *
+ * ## Status
+ *
+ * * Maintainer: **Serghei Iakovlev**
+ * * Stability: **stable**
+ * * Contact: sadhooklay@gmail.com
+ *
+ * ## Example
+ *
+ *     modules:
+ *         enabled:
+ *             - Phalcon1:
+ *                 bootstrap: 'app/config/bootstrap.php'
+ *                 cleanup: true
+ *                 savepoints: true
+ *
+ * ## Config
+ *
  * The following configurations are required for this module:
- * <ul>
- * <li>boostrap - the path of the application bootstrap file</li>
- * <li>cleanup - cleanup database (using transactions)</li>
- * <li>savepoints - use savepoints to emulate nested transactions</li>
- * </ul>
+ * * boostrap: the path of the application bootstrap file</li>
+ * * cleanup: cleanup database (using transactions)</li>
+ * * savepoints: use savepoints to emulate nested transactions</li>
  *
  * The application bootstrap file must return Application object but not call its handle() method.
  *
@@ -44,26 +64,15 @@ use Codeception\Lib\Connector\PhalconMemorySession;
  * ?>
  * ```
  *
- * You can use this module by setting params in your functional.suite.yml:
- * <pre>
- * class_name: FunctionalTester
- * modules:
- *     enabled:
- *         - Phalcon1:
- *             bootstrap: 'app/config/bootstrap.php'
- *             cleanup: true
- *             savepoints: true
- * </pre>
+ * ## API
  *
+ * * di - `Phalcon\Di\Injectable` instance
+ * * client - `BrowserKit` client
  *
  * ## Parts
  *
  * * ORM - include only haveRecord/grabRecord/seeRecord/dontSeeRecord actions
  *
- * ## Status
- *
- * Maintainer: **sergeyklay**
- * Stability: **beta**
  */
 class Phalcon1 extends Framework implements ActiveRecord, PartedModule
 {
@@ -85,8 +94,8 @@ class Phalcon1 extends Framework implements ActiveRecord, PartedModule
     public $di = null;
 
     /**
-     * Phalcon1 Connector
-     * @var Phalcon1Connector
+     * Phalcon Connector
+     * @var PhalconConnector
      */
     public $client;
 
@@ -112,7 +121,7 @@ class Phalcon1 extends Framework implements ActiveRecord, PartedModule
             );
         }
 
-        $this->client = new Phalcon1Connector();
+        $this->client = new PhalconConnector();
     }
 
     /**
@@ -138,6 +147,7 @@ class Phalcon1 extends Framework implements ActiveRecord, PartedModule
         Di::setDefault($this->di);
 
         if ($this->di->has('session')) {
+            // Destroy existing sessions of previous tests
             $this->di['session'] = new PhalconMemorySession();
         }
 
@@ -189,6 +199,7 @@ class Phalcon1 extends Framework implements ActiveRecord, PartedModule
                     break;
                 }
             }
+            $this->di['db']->close();
         }
         $this->di = null;
         Di::reset();
@@ -202,6 +213,17 @@ class Phalcon1 extends Framework implements ActiveRecord, PartedModule
     }
 
     /**
+     * Provides access the Phalcon application object.
+     *
+     * @see \Codeception\Lib\Connector\Phalcon::getApplication
+     * @return \Phalcon\Mvc\Application|\Phalcon\Mvc\Micro|\Phalcon\Cli\Console
+     */
+    public function getApplication()
+    {
+        $this->client->getApplication();
+    }
+
+    /**
      * Sets value to session. Use for authorization.
      *
      * @param string $key
@@ -209,25 +231,66 @@ class Phalcon1 extends Framework implements ActiveRecord, PartedModule
      */
     public function haveInSession($key, $val)
     {
-        $this->di->get('session')->set($key, (string)$val);
-        $this->debugSection('Session', json_encode($this->di['session']->getAll()));
+        $this->di->get('session')->set($key, $val);
+        $this->debugSection('Session', json_encode($this->di['session']->toArray()));
     }
 
     /**
      * Checks that session contains value.
      * If value is `null` checks that session has key.
      *
+     * ``` php
+     * <?php
+     * $I->seeInSession('key');
+     * $I->seeInSession('key', 'value');
+     * ?>
+     * ```
+     *
      * @param string $key
      * @param mixed $value
      */
     public function seeInSession($key, $value = null)
     {
-        $this->debugSection('Session', json_encode($this->di['session']->getAll()));
-        if (is_null($value)) {
-            $this->assertTrue($this->di['session']->has($key));
+        $this->debugSection('Session', json_encode($this->di['session']->toArray()));
+
+        if (is_array($key)) {
+            $this->seeSessionHasValues($key);
             return;
         }
-        $this->assertEquals($value, $this->di['session']->get($key));
+
+        if (!$this->di['session']->has($key)) {
+            $this->fail("No session variable with key '$key'");
+        }
+
+        if (is_null($value)) {
+            $this->assertTrue($this->di['session']->has($key));
+        } else {
+            $this->assertEquals($value, $this->di['session']->get($key));
+        }
+    }
+
+    /**
+     * Assert that the session has a given list of values.
+     *
+     * ``` php
+     * <?php
+     * $I->seeSessionHasValues(['key1', 'key2']);
+     * $I->seeSessionHasValues(['key1' => 'value1', 'key2' => 'value2']);
+     * ?>
+     * ```
+     *
+     * @param  array $bindings
+     * @return void
+     */
+    public function seeSessionHasValues(array $bindings)
+    {
+        foreach ($bindings as $key => $value) {
+            if (is_int($key)) {
+                $this->seeInSession($value);
+            } else {
+                $this->seeInSession($key, $value);
+            }
+        }
     }
 
     /**
@@ -375,6 +438,60 @@ class Phalcon1 extends Framework implements ActiveRecord, PartedModule
             $this->fail($e->getMessage());
 
             return null;
+        }
+    }
+
+    /**
+     * Opens web page using route name and parameters.
+     *
+     * ``` php
+     * <?php
+     * $I->amOnRoute('posts.create');
+     * ?>
+     * ```
+     *
+     * @param $routeName
+     * @param array $params
+     */
+    public function amOnRoute($routeName, $params = [])
+    {
+        if (!$this->di->has('url')) {
+            $this->fail('Unable to resolve "url" service.');
+        }
+
+        /** @var Url $url */
+        $url = $this->di->getShared('url');
+
+        try {
+            $this->amOnPage($url->get(['for' => $routeName], null, true));
+        } catch (Exception $e) {
+            $this->fail($e->getMessage());
+        }
+    }
+
+    /**
+     * Checks that current url matches route
+     *
+     * ``` php
+     * <?php
+     * $I->seeCurrentRouteIs('posts.index');
+     * ?>
+     * ```
+     * @param string $routeName
+     */
+    public function seeCurrentRouteIs($routeName)
+    {
+        if (!$this->di->has('url')) {
+            $this->fail('Unable to resolve "url" service.');
+        }
+
+        /** @var Url $url */
+        $url = $this->di->getShared('url');
+
+        try {
+            $this->seeCurrentUrlEquals($url->get(['for' => $routeName], null, true));
+        } catch (Exception $e) {
+            $this->fail($e->getMessage());
         }
     }
 
