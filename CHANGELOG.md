@@ -2,6 +2,8 @@
 
 #### 2.1.5
 
+* **PHP7 support** verified )
+* Syntax check for tests. If PHP7 is used, `ParseException` handles syntax error, otherwise linting happens with `php -l`. HHVM - check is skipped. @davertmik
 * [PhpBrowser][WebDriver] Unifies `expires` parameter for `setCookie`. Fixes #2582 By @davertmik
 * [REST] Fixes validation of several types with filters. See #2581 By @davertmik
 * [REST] JsonType improved URL filter to use `filter_var($value, FILTER_VALIDATE_URL)`
