@@ -99,7 +99,7 @@ before_script:
   - php frameworks-symfony/app/console doctrine:fixtures:load -n --env test
   # Build
   - php codecept build -c frameworks-yii-basic/tests
-  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || php codecept build -c frameworks-phalcon'
+  - '[[ "$TRAVIS_PHP_VERSION" == "hhvm" ]] || [[ "$TRAVIS_PHP_VERSION" == "7" ]] || php codecept build -c frameworks-phalcon'
   - php codecept build -c frameworks-laravel
   - php codecept build -c frameworks-symfony
   - '[[ "$TRAVIS_PHP_VERSION" == "5.4" ]] || php codecept build -c frameworks-l5'
