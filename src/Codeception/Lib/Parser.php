@@ -58,13 +58,9 @@ class Parser
                 \Codeception\Lib\Notification::deprecate("\$scenario->$call() is deprecated in favor of annotation: // @$call",
                     $this->scenario->getFeature()
                 );
-
-
                 eval($line);
             }
-
         }
-
     }
 
     public function attachMetadata($comments)
@@ -130,7 +126,10 @@ class Parser
 
     public static function validateAndLoad($file, $isolated = false)
     {
-        if ((PHP_MAJOR_VERSION < 7 || $isolated) && (!defined('HHVM_VERSION'))) {
+        $useLinter = (PHP_MAJOR_VERSION < 7 || $isolated)
+            && !defined('HHVM_VERSION') // not for HHVM
+            && !(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'); // not for WIN
+        if ($useLinter) {
             exec("php -l $file", $output, $code);
             if ($code == 255) {
                 throw new TestParseException($file, implode("\n", $output));
