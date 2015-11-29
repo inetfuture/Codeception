@@ -124,7 +124,7 @@ class TestLoader
 
     public function addTest($path)
     {
-        Parser::validateAndLoad($path);
+        Parser::load($path);
         $testClasses = Parser::getClassesFromFile($path);
 
         foreach ($testClasses as $testClass) {
@@ -146,7 +146,7 @@ class TestLoader
 
     public function addCept($file)
     {
-        Parser::validateAndLoad($file, true);
+        Parser::validate($file);
         $name = $this->relativeName($file);
 
         $cept = new Cept();
@@ -158,7 +158,7 @@ class TestLoader
 
     public function addCest($file)
     {
-        Parser::validateAndLoad($file);
+        Parser::load($file);
         $testClasses = Parser::getClassesFromFile($file);
 
         foreach ($testClasses as $testClass) {

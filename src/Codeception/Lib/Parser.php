@@ -124,19 +124,24 @@ class Parser
         $this->scenario->addStep(new \Codeception\Step\Comment($comment, []));
     }
 
-    public static function validateAndLoad($file, $isolated = false)
+    public static function validate($file)
     {
-        $useLinter = (PHP_MAJOR_VERSION < 7 || $isolated)
+        if ((PHP_MAJOR_VERSION < 7)
             && !defined('HHVM_VERSION') // not for HHVM
-            && !(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'); // not for WIN
-        if ($useLinter) {
-            exec("php -l $file", $output, $code);
-            if ($code == 255) {
-                throw new TestParseException($file, implode("\n", $output));
-            }
-            if ($isolated) {
-                return;
-            }
+            && !(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') // not for WIN
+        ) {
+            return;
+        }
+        exec("php -l $file", $output, $code);
+        if ($code == 255) {
+            throw new TestParseException($file, implode("\n", $output));
+        }
+    }
+
+    public static function load($file)
+    {
+        if (PHP_MAJOR_VERSION < 7) {
+            self::validate($file);
         }
         try {
             self::includeFile($file);
