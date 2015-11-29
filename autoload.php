@@ -6,6 +6,7 @@ if (file_exists(__DIR__.'/vendor/autoload.php')) {
     require_once __DIR__ . '/../../autoload.php';
 }
 
+// @codingStandardsIgnoreStart
 // loading WebDriver aliases
 if (!class_exists('RemoteWebDriver') and class_exists('Facebook\WebDriver\Remote\RemoteWebDriver')) {
     class RemoteWebDriver extends \Facebook\WebDriver\Remote\RemoteWebDriver {};
@@ -32,6 +33,7 @@ if (PHP_MAJOR_VERSION < 7) {
     interface Throwable {};
     class ParseError extends \Exception {}
 }
+// @codingStandardsIgnoreEnd
 
 if (!function_exists('json_last_error_msg')) {
     /**

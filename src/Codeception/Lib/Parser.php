@@ -130,12 +130,12 @@ class Parser
 
     public static function validateAndLoad($file, $isolated = false)
     {
-        if (PHP_MAJOR_VERSION < 7 || $isolated) {
+        if ((PHP_MAJOR_VERSION < 7 || $isolated) && (!defined('HHVM_VERSION'))) {
             exec("php -l $file", $output, $code);
             if ($code == 255) {
                 throw new TestParseException($file, implode("\n", $output));
             }
-            If ($isolated) {
+            if ($isolated) {
                 return;
             }
         }
